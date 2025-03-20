@@ -1,76 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chat Room</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .chat-container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        #chat-log {
-            border: 1px solid #ddd;
-            padding: 10px;
-            height: 300px;
-            overflow-y: scroll;
-            margin-bottom: 20px;
-        }
-        #chat-message-input {
-            width: 80%;
-            margin-right: 10px;
-        }
-    </style>
+    <title>Chat Room: {{ room_name }}</title>
 </head>
 <body>
-    <div class="chat-container">
-        <h3>Chat Room: {{ room_name }}</h3>
-        <div id="chat-log"></div>
-        <div class="input-group">
-            <input id="chat-message-input" type="text" class="form-control" placeholder="Type a message...">
-            <button id="chat-message-submit" class="btn btn-primary">Send</button>
-        </div>
-    </div>
+    <h1>Chat Room: {{ room_name }}</h1>
+    <div id="chat-log"></div>
+    <input id="chat-message-input" type="text" size="100"><br>
+    <input id="chat-message-submit" type="button" value="Send">
     <script>
-        const roomName = "{{ room_name|escapejs }}";
+        const roomName = "{{ room_name }}";
+        // Use wss:// for HTTPS and ws:// for HTTP
+        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
         const chatSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+            protocol + window.location.host + '/ws/chat/' + roomName + '/'
         );
+
+        // Function to decode base64 strings
+        function decodeBase64(encoded) {
+            try {
+                // Remove the "b'" prefix and "'" suffix if present
+                if (encoded.startsWith("b'") && encoded.endsWith("'")) {
+                    encoded = encoded.slice(2, -1);
+                }
+                return atob(encoded);
+            } catch (e) {
+                console.error("Error decoding base64:", e);
+                return encoded; // Return original if decoding fails
+            }
+        }
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
-            const chatLog = document.querySelector('#chat-log');
-            chatLog.innerHTML += '<p><strong>' + data.username + ':</strong> ' + data.message + '</p>';
-            chatLog.scrollTop = chatLog.scrollHeight;  // Auto-scroll to bottom
+            const decodedMessage = decodeBase64(data.message);
+            document.querySelector('#chat-log').innerHTML += '<p>' + data.username + ': ' + decodedMessage + '</p>';
         };
 
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
         };
 
-        document.querySelector('#chat-message-submit').onclick = function(e) {
-            const messageInputDom = document.querySelector('#chat-message-input');
-            const message = messageInputDom.value;
-            if (message.trim() !== '') {
-                chatSocket.send(JSON.stringify({
-                    'message': message
-                }));
-                messageInputDom.value = '';
+        chatSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // Enter key
+                document.querySelector('#chat-message-submit').click();
             }
         };
 
-        // Allow sending message with Enter key
-        document.querySelector('#chat-message-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.querySelector('#chat-message-submit').click();
-            }
-        });
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
     </script>
 </body>
 </html>
