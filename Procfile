@@ -1,1 +1,1 @@
-web: gunicorn chatapp.wsgi
+web: gunicorn chatapp.asgi:application -k uvicorn.workers.UvicornWorker

@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: mychatapp
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn chatapp.asgi:application -k uvicorn.workers.UvicornWorker"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: chatapp.settings
+  - type: redis
+    name: mychatapp-redis
+    plan: free
+databases:
+  - name: mychatapp-db
+    databaseName: mychatapp
+    plan: free
