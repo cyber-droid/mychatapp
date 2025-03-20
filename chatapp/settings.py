@@ -2,23 +2,31 @@ import os
 import dj_database_url
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-your-secret-key-here'  # Change this for production
-DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']  # Change to your domain for hosting
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')  # Use an environment variable in production
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mychatapp-rs75.onrender.com']
+
+# Application definition
 INSTALLED_APPS = [
-    'daphne',  # Corrected from 'daphnedjango'
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    'channels',
     'chat',
+    'channels',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +57,19 @@ TEMPLATES = [
     },
 ]
 
+WSGI_APPLICATION = 'chatapp.wsgi.application'
 ASGI_APPLICATION = 'chatapp.asgi.application'
+
+# Database
+# Use dj-database-url to parse DATABASE_URL from the environment
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),  # Fallback for local development
+        conn_max_age=600,
+    )
+}
+
+# Redis configuration for Channels
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -59,27 +79,38 @@ CHANNEL_LAYERS = {
     },
 }
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-    )
-}
-
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
-AUTH_USER_MODEL = 'chat.User'
-
+# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = 'static/'
+
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-django_heroku.settings(locals())
+# Custom user model
+AUTH_USER_MODEL = 'chat.User'
+
+# Login redirect
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
