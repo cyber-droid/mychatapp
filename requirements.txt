@@ -35,3 +35,4 @@ typing_extensions==4.12.2
 tzdata==2025.1
 uvicorn==0.34.0
 zope.interface==7.2
+psycopg2-binary==2.9.10
