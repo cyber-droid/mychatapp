@@ -20,6 +20,7 @@ idna==3.10
 incremental==24.7.2
 msgpack==1.1.0
 packaging==24.2
+psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
@@ -34,5 +35,5 @@ txaio==23.1.1
 typing_extensions==4.12.2
 tzdata==2025.1
 uvicorn==0.34.0
+websockets==15.0.1
 zope.interface==7.2
-psycopg2-binary==2.9.10

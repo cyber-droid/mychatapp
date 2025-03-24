@@ -2,46 +2,71 @@
 <html>
 <head>
     <title>Chat Room: {{ room_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        #chat-log {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: #fff;
+            margin-bottom: 20px;
+        }
+        #chat-message-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        #chat-message-submit {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        #chat-message-submit:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin: 5px 0;
+        }
+        .message .username {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
 </head>
 <body>
     <h1>Chat Room: {{ room_name }}</h1>
     <div id="chat-log"></div>
-    <input id="chat-message-input" type="text" size="100"><br>
-    <input id="chat-message-submit" type="button" value="Send">
+    <input id="chat-message-input" type="text" placeholder="Type a message...">
+    <button id="chat-message-submit">Send</button>
+
     <script>
         const roomName = "{{ room_name }}";
-        // Use wss:// for HTTPS and ws:// for HTTP
-        const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
         const chatSocket = new WebSocket(
-            protocol + window.location.host + '/ws/chat/' + roomName + '/'
+            'wss://' + window.location.host + '/ws/chat/' + roomName + '/'
         );
-
-        // Function to decode base64 strings
-        function decodeBase64(encoded) {
-            try {
-                // Remove the "b'" prefix and "'" suffix if present
-                if (encoded.startsWith("b'") && encoded.endsWith("'")) {
-                    encoded = encoded.slice(2, -1);
-                }
-                return atob(encoded);
-            } catch (e) {
-                console.error("Error decoding base64:", e);
-                return encoded; // Return original if decoding fails
-            }
-        }
 
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
-            const decodedMessage = decodeBase64(data.message);
-            document.querySelector('#chat-log').innerHTML += '<p>' + data.username + ': ' + decodedMessage + '</p>';
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<span class="username">${data.username}:</span> ${data.message}`;
+            document.querySelector('#chat-log').appendChild(messageElement);
+            document.querySelector('#chat-log').scrollTop = document.querySelector('#chat-log').scrollHeight;
         };
 
         chatSocket.onclose = function(e) {
             console.error('Chat socket closed unexpectedly');
-        };
-
-        chatSocket.onerror = function(e) {
-            console.error('WebSocket error:', e);
         };
 
         document.querySelector('#chat-message-input').focus();
@@ -54,10 +79,12 @@
         document.querySelector('#chat-message-submit').onclick = function(e) {
             const messageInputDom = document.querySelector('#chat-message-input');
             const message = messageInputDom.value;
-            chatSocket.send(JSON.stringify({
-                'message': message
-            }));
-            messageInputDom.value = '';
+            if (message.trim() !== '') {
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+                messageInputDom.value = '';
+            }
         };
     </script>
 </body>
